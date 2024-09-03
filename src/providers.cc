@@ -21,7 +21,9 @@
 
 #include "miniocpp/providers.h"
 
+#ifndef MINIO_CPP_FAASM
 #include <INIReader.h>
+#endif
 
 #include <fstream>
 #include <iosfwd>
@@ -151,6 +153,7 @@ AwsConfigProvider::AwsConfigProvider(std::string filename,
     if (!utils::GetEnv(profile, "AWS_PROFILE")) profile = "default";
   }
 
+#ifndef MINIO_CPP_FAASM
   INIReader reader(filename);
   if (reader.ParseError() < 0) {
     this->creds_ = error::make<Credentials>("unable to read " + filename);
@@ -160,6 +163,14 @@ AwsConfigProvider::AwsConfigProvider(std::string filename,
                                reader.Get(profile, "aws_secret_access_key", ""),
                                reader.Get(profile, "aws_session_token", "")};
   }
+#else
+  // Faasm: we disable this provider to avoid having to link with an INI
+  // config file reader library. The one minio-cpp origionally ships with is
+  // only configured to be built with Meson. Adding a new one or adapting it
+  // would not be too much work, but given that we do not even need it we
+  // comment it out here.
+  throw std::runtime_error("AwsConfigProvider disabled!");
+#endif
 }
 
 AwsConfigProvider::~AwsConfigProvider() {}
